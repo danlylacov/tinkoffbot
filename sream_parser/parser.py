@@ -1,6 +1,5 @@
 from dotenv.main import load_dotenv
 import os
-
 import asyncio
 from datetime import timedelta
 from tinkoff.invest import Client, CandleInterval
