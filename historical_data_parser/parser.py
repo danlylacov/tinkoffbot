@@ -1,6 +1,5 @@
 from dotenv.main import load_dotenv
 import os
-
 from datetime import timedelta
 import time
 from tinkoff.invest import CandleInterval, Client
@@ -8,7 +7,7 @@ from tinkoff.invest.utils import now
 
 
 load_dotenv()
-TOKEN = os.environ['TINKOFF_API_TOKEN']
+TOKEN = os.environ['TINKOFF_API_TOKEN'] # токен TinkoffAPI
 
 
 def get_candels(figi: str, file_name: str):# str, str -> .txt
