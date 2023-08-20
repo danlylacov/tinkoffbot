@@ -1,6 +1,5 @@
 from dotenv.main import load_dotenv
 import os
-
 from datetime import timedelta
 import time
 from tinkoff.invest import CandleInterval, Client
