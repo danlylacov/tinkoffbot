@@ -4,6 +4,7 @@ import asyncio
 from datetime import timedelta
 from tinkoff.invest import Client, CandleInterval
 from tinkoff.invest.utils import now
+import datetime
 
 
 load_dotenv()
@@ -24,6 +25,8 @@ async def parse(figi:str, interval:int =5): # str, int -> HistoricCandle
 
     :return:
         свеча в формате - HistoricCandle(открытие, верхняя граница, нижняя граница, закрытие, объём, время, завершена(bool))
+
+        !!!ВАЖНО: в свече указано время по часовому поясу UTC+00.00
         '''
 
     # установка временного интервала
@@ -56,6 +59,9 @@ async def parse(figi:str, interval:int =5): # str, int -> HistoricCandle
         for candle in client.get_all_candles(                       # вызов метода получения свечи
             figi=figi,
             from_=now() - timedelta(minutes=interval),
+
+            # Я ИЗМЕНИЛ МЕТОД NOW() В БИБЛИОТЕКЕ, НАДО ПРОВЕРИТЬ КОРРЕКТНОСТЬ РАБОТЫ, ЕСЛИ ЧТО ИЗМЕНИТЬ
+
             interval=interval_method,
         ):
 
@@ -65,11 +71,13 @@ async def parse(figi:str, interval:int =5): # str, int -> HistoricCandle
 
 
 
-async def main():# None -> list
+async def async_parse():# None -> list
     '''
     функция ассинхронного вызова parse с записью полученных значений в список
     :return:
         список со свечами акций по индексу мосбиржи
+
+    !!!ВАЖНО: в свече указано время по часовому поясу UTC+00.00
     '''
     request = await asyncio.gather(
 
@@ -78,8 +86,12 @@ async def main():# None -> list
         parse("BBG004730JJ5"), parse("BBG004S686N0"), parse("BBG008F2T3T2"), parse("BBG000RJL816"), parse("BBG000VKG4R5"), parse("BBG004731489"), parse("BBG000TJ6F42"), parse("BBG000Q7GG57"), parse("BBG0029SFXB3"), parse("BBG004S687G6"), parse("BBG005D1WCQ1"), parse("BBG000FWGSZ5"), parse("BBG000N16BP3"), parse("BBG004S686W0"), parse("BBG004S68FR6"), parse("BBG0029SG1C1"), parse("BBG000NLC9Z6"), parse("BBG00475K2X9"), parse("BBG004S685M3"), parse("BBG006L8G4H1"), parse("BBG004S68614"), parse("BBG000BX7DH0"), parse("BBG004730ZJ9"), parse("BBG004731354"), parse("BBG000GQSRR5"), parse("BBG000RMWQD4"), parse("BBG000RP8V70"), parse("BBG00475JZZ6"), parse("BBG004730RP0"), parse("BBG000NLHR27"), parse("BBG002B2J5X0"), parse("BBG004S68696"), parse("BBG000K3STR7"), parse("BBG00475K6C3"), parse("BBG001M2SC01"), parse("BBG000KTF667"), parse("BBG0014PFYM2"), parse("BBG0047315Y7"), parse("BBG00VPKLPX4"), parse("BBG000PKWCQ7"), parse("BBG000Q49F45"), parse("BBG000QW1WH0"), parse("BBG004S68B31"), parse("BBG002458LF8"), parse("BBG000RTHVK7"), parse("BBG000W325F7"), parse("BBG004S687W8"), parse("BBG004S68829"), parse("BBG0047315D0"), parse("BBG000DBD6F6"), parse("BBG000QFH687"), parse("BBG00B8NN386"), parse("BBG000F6YP24"), parse("BBG00HY6V6H5"), parse("BBG00178PGX3"), parse("BBG00F9XX7H4"), parse("BBG003LYCMB1"), parse("BBG004S688G4"), parse("BBG004RVFCY3"), parse("BBG007N0Z367"), parse("BBG00F40L971"), parse("BBG000LNHHJ9"), parse("BBG000SK7JS5"), parse("BBG0018X6YV1"), parse("BBG000RK52V1"), parse("BBG001DJNR51"), parse("BBG004S682J4"), parse("BBG000VG1034"), parse("BBG004731032"), parse("BBG000R607Y3"), parse("BBG000QJW156"), parse("BBG004RVFFC0"), parse("BBG002YFXL29"), parse("BBG001BBSZV8"), parse("BBG000MZL2S9"), parse("BBG004S682Z6"), parse("BBG00QPYJ5H0"), parse("BBG004S68CV8"), parse("BBG000PZ0833"), parse("BBG004S68CP5"), parse("BBG004730N88"), parse("BBG002B25NL9"), parse("BBG004Z2RGW8"), parse("BBG004S68BH6"), parse("BBG004S689R0"), parse("BBG003BNWBP3"), parse("BBG004S681B4"), parse("BBG004S68JR8"), parse("BBG000Q7ZZY2"),
 
     )
-    print(request)
+    return (request)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+def main():
+    request = asyncio.run(async_parse())
+    return request
+
+
