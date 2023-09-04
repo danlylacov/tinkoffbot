@@ -1,89 +1,72 @@
-import sqlite3
-from stream_parser.parser import stream_parse
 from math import sqrt
 
 class StandartDeviation(object):
 
-    def __init__(self, figis: list):
-        self.figis = figis
-        self.historical_data_bd = sqlite3.connect('stocks.db')
-        self.cur = self.historical_data_bd.cursor()
-
-
-    def get_avarage_of_action_volume(self, figi: str): # str -> float
+    def __init__(self, volumes: list, stream_volume: int, z_limit: float = 0.9544):
         '''
-        Функция получения среденего значения объёма после отсечения 25% самых мелких и 25% самых крупных значений по акции
-        :param figi: figi-индефикатор акции
-        :return: среднее зн-е объёма
+        Конструктор класса
+        :param volumes: список со значениями объёмов по определённой акции
+        :param stream_volume: список, полученный в данный момент
+        :param z_limit: параметр для сравнения с Z-оценкой default: 0.9544
+
+        result: результат работы z-оценки(bool, True - аномальный объем, False - обычный объем
+
         '''
-        request = self.cur.execute(f'SELECT volume FROM {figi} ')
-        result = []
-        for el in request:
-            result.append(int(el[0]))
-        result.sort()
-        result = result[len(result)//4:-(len(result)//4)]
-        return sum(result)/len(result)
+        self.volumes = volumes
+        self.sream_volume = stream_volume
+        self.z_limit = z_limit
 
+        self.result = self.check_anomal()
 
-    def get_sorted_volumes(self, figis: list): # list -> list
+    def sorted_and_clipping(self):
         '''
-        Функция получения списка средних значений объема по акциям указанным как список
-        :return: список, имеющий структуру: [ [figi акции, среднее зн-е], [..], [..] ]
+        Сортировка и отсечение 25% самых больших и маленьких зн-й
+        :return:
         '''
-        result = []
-        for figi in figis:
-            result.append([figi, self.get_avarage_of_action_volume(figi)])
-        return result
+        self.volumes.sort()
+        self.volumes = self.volumes[len(self.volumes)//4:-(len(self.volumes)//4)]
 
 
-    def get_value_deviation(self, volumes: list, avarage_value: float):# list, float -> list
+    def get_average_value(self): # -> float
         '''
-        Функция получения разницы (отклонения) между значением каждого объема и средним значением объема
-        :param volumes: зн-я объёмов
-        :param avarage_value: среднее зн-е объема
-        :return: список с разницами
+        Получение среднего зн-я оюбъёмов
+        :return: среднее зн-е
         '''
-        deviations = [volume - avarage_value for volume in volumes]
-        return deviations
+        avarage_value = sum(self.volumes)/len(self.volumes)
+        return avarage_value
 
-    def get_standart_deviation(self, deviations: list): # list -> float
+
+    def get_standart_deviation(self): # -> float
         '''
-        Функция получения среднеквадратичного отклонения
-        :param deviations: список с отклонениями
-        :return: среднеквадратичное отклонение
+        получение стандартного отклонения (омега)
+        :return: стандартное отклонение
         '''
-        deviations = [deviation ** 2 for deviation in deviations]
-        standart_deviation = sqrt(sum(deviations)/len(deviations))
-        return standart_deviation
+        sum_of_deviations = 0
+        avarage_value = self.get_average_value()
+        for i in range(len(self.volumes)):
+            sum_of_deviations += (self.volumes[i] - avarage_value)**2
+        return sqrt(sum_of_deviations/len(self.volumes))
 
 
-    def get_Z_analyize(self, X_i: float, X_av: float, standard_deviation: float): # float, float, float -> float
+    def get_z_score(self, avarage_value: float, standart_deviation: float): # -> float
         '''
-        Функция получения Z-преобразования по формуле Z_i =  Z_i = (X_i - X_av)/deviation
-        :param X_i: значение объема, которое мы получаем в реальном времени
-        :param X_av: среднее значение
-        :param standart_deviation: среднеквадратическое отклонение
-        :return: проценты (то есть величина, показывающая, в скольких стандратных отклонениях от среднего значения находится изучаемое значение объема).
+        получение z-оценки
+        :param avarage_value: Среднее зн-е
+        :param standart_deviation: Стандартное отклонение
+        :return: z-оценка
         '''
-        Z_i = (X_i - X_av)/standard_deviation
-        return Z_i
+        z = (self.sream_volume - avarage_value)/ standart_deviation
+        return z
 
 
-
-
-
-
-
-
-
-
-a = StandartDeviation(['BBG000BX7DH0', 'BBG000DBD6F6'])
-print(a.get_value_deviation([1, 2, 3], 1))
-
-
-
-
-
-
-
-
+    def check_anomal(self): # -> bool
+        '''
+        главная функция, выполняет все расчеты и проверяет  выходит ли z-оценка за пределы допустимого зн-я (self.z_limit)
+        :return: bool
+        '''
+        self.sorted_and_clipping()
+        z_deviation = self.get_z_score(self.get_average_value(), self.get_standart_deviation())
+        if z_deviation > self.z_limit:
+            return True
+        else:
+            return False
